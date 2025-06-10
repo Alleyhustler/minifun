@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini PumpFun Window</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            font-family: 'Courier New', monospace; 
+            margin: 0; 
+            padding: 20px;
+            background: linear-gradient(#15161b);
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        .window {
+            background: #000;
+            border: 2px solid #333;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+            resize: both;
+            min-width: 600px;
+            min-height: 400px;
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+        
+        .title-bar {
+            background: linear-gradient(to bottom, #444, #222);
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            cursor: move;
+            user-select: none;
+            border-bottom: 1px solid #555;
+        }
+        
+        .window-controls {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .control-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .close { background: #ff5f57; }
+        .minimize { background: #ffbd2e; }
+        .maximize { background: #28ca42; }
+        
+        .window-content {
+            height: calc(100% - 30px);
+            overflow: auto;
+        }
+        
+        .scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .scrollbar::-webkit-scrollbar-track {
+            background: #111;
+        }
+        
+        .scrollbar::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+        
+        .token-card {
+            transition: all 0.2s ease;
+        }
+        
+        .token-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .chart-mini {
+            width: 100%;
+            height: 20px;
+            background: #111;
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .price-trend {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #059669);
+            transition: width 0.3s ease;
+        }
+        
+        /* Added styles for top-right links and logo */
+        .top-right-links {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 1000;
+        }
+        
+        .top-right-links a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+        
+        .top-right-links a:hover {
+            color: #10b981;
+        }
+        
+        .logo-placeholder {
+            width: 40px;
+            height: 40px;
+            background-color: transparent;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Added top-right links and logo placeholder -->
+    <div class="top-right-links">
+        <a href="https://twitter.com/yourtwitter" target="_blank">Twitter</a>
+        <a href="here" target="_blank">CA HERE</a>
+        <div class="logo-placeholder">
+            <!-- You can add your logo image here -->
+            <img src="Progetto senza titolo (1).png" alt="Logo" style="width:100%; height:100%; object-fit:contain;"> -->
+        </div>
+    </div>
+
+    <div id="window" class="window fade-in" style="width: 800px; height: 600px; margin: 20px auto;">
+        <div class="title-bar" id="titleBar">
+            <div class="window-controls">
+                <div class="control-btn close" onclick="minimizeWindow()"></div>
+                <div class="control-btn minimize" onclick="minimizeWindow()"></div>
+                <div class="control-btn maximize" onclick="toggleMaximize()"></div>
+            </div>
+            <div class="text-white text-sm font-bold">pump.fun - Mini</div>
+            <div style="width: 54px;"></div>
+        </div>
+        
+        <div class="window-content scrollbar">
+            <div id="app" class="h-full"></div>
+        </div>
+    </div>
+
+    <script>
+        // Window dragging functionality
+        let isDragging = false;
+        let currentX, currentY, initialX, initialY;
+        let xOffset = 0, yOffset = 0;
+        
+        const windowEl = document.getElementById('window');
+        const titleBar = document.getElementById('titleBar');
+        
+        titleBar.addEventListener('mousedown', dragStart);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+        
+        function dragStart(e) {
+            if (e.target.classList.contains('control-btn')) return;
+            
+            initialX = e.clientX - xOffset;
+            initialY = e.clientY - yOffset;
+            
+            if (e.target === titleBar || titleBar.contains(e.target)) {
+                isDragging = true;
+                titleBar.style.cursor = 'grabbing';
+            }
+        }
+        
+        function drag(e) {
+            if (isDragging) {
+                e.preventDefault();
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+                
+                xOffset = currentX;
+                yOffset = currentY;
+                
+                windowEl.style.transform = `translate(${currentX}px, ${currentY}px)`;
+            }
+        }
+        
+        function dragEnd() {
+            isDragging = false;
+            titleBar.style.cursor = 'move';
+        }
+        
+        // Window controls
+        let isMaximized = false;
+        let originalSize = { width: '800px', height: '600px' };
+        
+        function minimizeWindow() {
+            windowEl.style.transform = 'scale(0.1)';
+            windowEl.style.opacity = '0';
+            setTimeout(() => {
+                windowEl.style.transform = `translate(${xOffset}px, ${yOffset}px) scale(1)`;
+                windowEl.style.opacity = '1';
+            }, 300);
+        }
+        
+        function toggleMaximize() {
+            if (!isMaximized) {
+                originalSize.width = windowEl.style.width;
+                originalSize.height = windowEl.style.height;
+                windowEl.style.width = '95vw';
+                windowEl.style.height = '95vh';
+                windowEl.style.transform = 'translate(0, 0)';
+                xOffset = 0;
+                yOffset = 0;
+                isMaximized = true;
+            } else {
+                windowEl.style.width = originalSize.width;
+                windowEl.style.height = originalSize.height;
+                isMaximized = false;
+            }
+        }
+        
+        // Enhanced App State
+        let activeTab = 'board';
+        let searchTerm = '';
+        let currentPage = 1;
+        let sortBy = 'bump_order';
+        let filterBy = 'all';
+        let viewMode = 'terminal';
+        let selectedToken = null;
+        let showTokenWindow = false;
+        let chartData = [];
+        let chartInterval;
+        
+        // More realistic token data with live-updating features
+        const mockTokens = [
+        {
+            id: 1,
+            name: "BONK",
+            ticker: "$BONK",
+            description: "The dog coin of the people 🐶 Born on Solana with community airdrops.",
+            marketCap: "1.34B",
+            price: "0.000017",
+            change24h: "+6.3",
+            volume24h: "325M",
+            progress: 90,
+            replies: 1045,
+            emoji: "🐶",
+            creator: "––",
+            createdTime: "Dec 2023",
+            lastBump: "5m ago",
+            holders: 12000,
+            isLive: true,
+            bondingCurve: null,
+            isNsfw: false,
+            tags: ["dog", "community", "meme"]
+        },
+        {
+            id: 2,
+            name: "WIF (dogwifhat)",
+            ticker: "$WIF",
+            description: "Shiba Inu wearing a hat 🎩 Community-favorite, cultural icon on Solana.",
+            marketCap: "1.01B",
+            price: "1.01",
+            change24h: "+9.7",
+            volume24h: "–",
+            progress: 85,
+            replies: 890,
+            emoji: "🐕",
+            creator: "––",
+            createdTime: "Q4 2023",
+            lastBump: "10m ago",
+            holders: 8500,
+            isLive: true,
+            bondingCurve: null,
+            isNsfw: false,
+            tags: ["dog", "meme", "viral"]
+        },
+        {
+            id: 3,
+            name: "POPCAT",
+            ticker: "$POPCAT",
+            description: "Based on the viral Popcat meme 🐱 Light-hearted and fun.",
+            marketCap: "451M",
+            price: "0.039",
+            change24h: "+1.8",
+            volume24h: "–",
+            progress: 70,
+            replies: 430,
+            emoji: "🐱",
+            creator: "––",
+            createdTime: "Q1 2024",
+            lastBump: "2m ago",
+            holders: 5200,
+            isLive: true,
+            bondingCurve: null,
+            isNsfw: false,
+            tags: ["cat", "meme", "viral"]
+        },
+        {
+            id: 4,
+            name: "FARTCOIN",
+            ticker: "$FARTCOIN",
+            description: "No gas too stinky 💨 Funny, irreverent—hit $1.28 market cap!",
+            marketCap: "1.28B",
+            price: "1.28",
+            change24h: "+10.3",
+            volume24h: "268M",
+            progress: 95,
+            replies: 1234,
+            emoji: "💨",
+            creator: "––",
+            createdTime: "2025",
+            lastBump: "just now",
+            holders: 10000,
+            isLive: true,
+            bondingCurve: null,
+            isNsfw: false,
+            tags: ["fun", "viral", "meme"]
+        },
+        {
+            id: 5,
+            name: "TRUMP",
+            ticker: "$TRUMP",
+            description: "Official Trump meme coin 🏛️ Launched Jan 2025, massive financial hype.",
+            marketCap: "multi‑billion",
+            price: "11",
+            change24h: "+15",
+            volume24h: "–",
+            progress: 98,
+            replies: 5600,
+            emoji: "🏛️",
+            creator: "CIC Digital LLC",
+            createdTime: "Jan 17, 2025",
+            lastBump: "1m ago",
+            holders: 25000,
+            isLive: true,
+            bondingCurve: null,
+            isNsfw: false,
+            tags: ["political", "sensation", "meme"]
+        },
+        {
+            id: 6,
+            name: "PENGU (Pudgy Penguins)",
+            ticker: "$PENGU",
+            description: "Ice-cold penguin vibes ❄️ Cute, community-driven Solana memecoin.",
+            marketCap: "714M",
+            price: "0.011",
+            change24h: "+10.7",
+            volume24h: "–",
+            progress: 75,
+            replies: 650,
+            emoji: "🐧",
+            creator: "––",
+            createdTime: "2024",
+            lastBump: "3m ago",
+            holders: 7400,
+            isLive: true,
+            bondingCurve: null,
+            isNsfw: false,
+            tags: ["penguin", "cute", "community"]
+        }
+        ];
+
+        
+        let newCoin = {
+            name: '',
+            ticker: '',
+            description: '',
+            website: '',
+            twitter: '',
+            telegram: ''
+        };
+
+        // Real-time updates simulation
+        setInterval(() => {
+            mockTokens.forEach(token => {
+                if (token.isLive && Math.random() > 0.7) {
+                    // Simulate price changes
+                    const change = (Math.random() - 0.5) * 0.1;
+                    token.change24h = (parseFloat(token.change24h) + change).toFixed(1);
+                    
+                    // Update last bump time occasionally
+                    if (Math.random() > 0.9) {
+                        token.lastBump = "now";
+                        setTimeout(() => {
+                            token.lastBump = Math.floor(Math.random() * 60) + "s ago";
+                        }, 2000);
+                    }
+                }
+            });
+            
+            if (activeTab === 'board') {
+                render();
+            }
+        }, 3000);
+        
+        function render() {
+            const app = document.getElementById('app');
+            
+            app.innerHTML = `
+                <div class="h-full bg-black text-white text-sm">
+                    <!-- Header -->
+                    <div class="border-b border-gray-800 p-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <h1 class="text-lg font-bold text-green-400 pulse">pump.fun</h1>
+                                <nav class="flex space-x-3">
+                                    <button onclick="setTab('board')" class="px-2 py-1 rounded text-xs ${activeTab === 'board' ? 'bg-green-500 text-black' : 'text-green-400 hover:text-green-300'}">
+                                        [board]
+                                    </button>
+                                    <button onclick="setTab('create')" class="px-2 py-1 rounded text-xs ${activeTab === 'create' ? 'bg-green-500 text-black' : 'text-green-400 hover:text-green-300'}">
+                                        [create]
+                                    </button>
+                                    <button onclick="setTab('terminal')" class="px-2 py-1 rounded text-xs ${activeTab === 'terminal' ? 'bg-green-500 text-black' : 'text-green-400 hover:text-green-300'}">
+                                        [terminal]
+                                    </button>
+                                </nav>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <select onchange="sortBy = this.value; render();" class="bg-gray-900 border border-gray-700 px-1 py-1 rounded text-xs text-green-400">
+                                    <option value="bump_order" ${sortBy === 'bump_order' ? 'selected' : ''}>bump order</option>
+                                    <option value="creation_time" ${sortBy === 'creation_time' ? 'selected' : ''}>creation time</option>
+                                    <option value="market_cap" ${sortBy === 'market_cap' ? 'selected' : ''}>market cap</option>
+                                    <option value="replies" ${sortBy === 'replies' ? 'selected' : ''}>replies</option>
+                                </select>
+                                <input 
+                                    type="text" 
+                                    placeholder="search tokens..." 
+                                    value="${searchTerm}"
+                                    onchange="searchTerm = this.value; render();"
+                                    class="bg-gray-900 border border-gray-700 px-2 py-1 rounded text-xs focus:outline-none focus:border-green-400 w-24"
+                                />
+                                <button class="bg-green-500 hover:bg-green-600 text-black px-2 py-1 rounded font-bold text-xs">
+                                    connect wallet
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div class="p-4 h-full overflow-auto">
+                        ${activeTab === 'board' ? renderBoard() : activeTab === 'create' ? renderCreate() : renderTerminal()}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderBoard() {
+            const filteredTokens = mockTokens.filter(token => 
+                token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                token.ticker.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            return `
+                <div>
+                    <div class="mb-4 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-green-400 mb-1 text-sm">[coin terminal]</h2>
+                            <p class="text-gray-400 text-xs">launch instantly tradeable coins • bonding curve progress • real-time updates</p>
+                        </div>
+                        <div class="flex items-center space-x-2 text-xs">
+                            <span class="text-green-400">LIVE: ${mockTokens.filter(t => t.isLive).length}</span>
+                            <span class="text-yellow-400">TOTAL: ${mockTokens.length}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        ${filteredTokens.map(token => `
+                            <div class="token-card bg-gray-900 border ${token.isLive ? 'border-green-400' : 'border-gray-800'} rounded p-3 hover:border-green-400 cursor-pointer relative" onclick="openTokenWindow(${token.id})">
+                                ${token.isLive ? '<div class="absolute top-1 right-1 w-2 h-2 bg-green-400 rounded-full pulse"></div>' : ''}
+                                
+                                <div class="flex items-start justify-between mb-2">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-10 h-10 rounded border border-gray-700 flex items-center justify-center text-sm">
+                                            ${token.emoji}
+                                        </div>
+                                        <div>
+                                            <h3 class="text-green-400 font-bold text-xs">${token.name}</h3>
+                                            <p class="text-gray-400 text-xs">${token.ticker}</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right text-xs">
+                                        <div class="text-white">$${token.marketCap}</div>
+                                        <div class="${parseFloat(token.change24h) >= 0 ? 'text-green-400' : 'text-red-400'}">
+                                            ${parseFloat(token.change24h) >= 0 ? '+' : ''}${token.change24h}%
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <p class="text-gray-300 text-xs leading-tight mb-2 line-clamp-2">${token.description}</p>
+                                
+                                <!-- Bonding Curve Progress -->
+                                <div class="mb-2">
+                                    <div class="flex justify-between text-xs text-gray-400 mb-1">
+                                        <span>bonding curve</span>
+                                        <span>${token.progress}%</span>
+                                    </div>
+                                    <div class="bg-gray-800 rounded-full h-2 mb-1">
+                                        <div class="${token.progress > 80 ? 'bg-green-400' : token.progress > 50 ? 'bg-yellow-400' : 'bg-blue-400'} h-2 rounded-full transition-all duration-300" style="width: ${token.progress}%"></div>
+                                    </div>
+                                    <div class="text-xs text-gray-500">
+                                        ${(token.bondingCurve / 1000).toFixed(1)}K / 100K SOL
+                                    </div>
+                                </div>
+                                
+                                <!-- Stats -->
+                                <div class="flex justify-between items-center text-xs">
+                                    <div class="flex space-x-3 text-gray-400">
+                                        <span title="Replies">[${token.replies}]</span>
+                                        <span title="Holders">👥${token.holders}</span>
+                                        <span title="Volume">📊$${token.volume24h}</span>
+                                    </div>
+                                    <div class="text-gray-500">
+                                        ${token.lastBump}
+                                    </div>
+                                </div>
+                                
+                                <!-- Creator & Time -->
+                                <div class="flex justify-between items-center text-xs text-gray-500 mt-1 pt-1 border-t border-gray-800">
+                                    <span>by ${token.creator}</span>
+                                    <span>${token.createdTime}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="flex justify-center items-center space-x-3 text-green-400 text-xs">
+                        <button onclick="prevPage()" class="hover:text-green-300" ${currentPage <= 1 ? 'disabled' : ''}>[ << prev ]</button>
+                        <span class="text-white">page ${currentPage}</span>
+                        <button onclick="nextPage()" class="hover:text-green-300">[ next >> ]</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderCreate() {
+            return `
+                <div class="max-w-md mx-auto">
+                    <div class="mb-4">
+                        <h2 class="text-green-400 mb-1 text-sm">[create coin]</h2>
+                        <p class="text-gray-400 text-xs">launch your coin instantly • fair launch • no presale</p>
+                    </div>
+                    
+                    <div class="bg-gray-900 border border-gray-800 rounded p-4">
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-green-400 text-xs mb-1">[image] *</label>
+                                <div class="border-2 border-dashed border-gray-700 rounded p-4 text-center hover:border-green-400 cursor-pointer transition-colors">
+                                    <div class="text-gray-400 text-xs">
+                                        <p>📁 click to upload or drag & drop</p>
+                                        <p class="text-gray-600 mt-1">max 1MB • jpg, png, gif</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-green-400 text-xs mb-1">[name] *</label>
+                                <input 
+                                    type="text" 
+                                    value="${newCoin.name}"
+                                    onchange="newCoin.name = this.value"
+                                    placeholder="e.g. Solana Doge"
+                                    class="w-full bg-black border border-gray-700 px-2 py-1 rounded text-white text-xs focus:outline-none focus:border-green-400"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label class="block text-green-400 text-xs mb-1">[ticker] *</label>
+                                <input 
+                                    type="text" 
+                                    value="${newCoin.ticker}"
+                                    onchange="newCoin.ticker = this.value"
+                                    placeholder="e.g. $SODOGE"
+                                    class="w-full bg-black border border-gray-700 px-2 py-1 rounded text-white text-xs focus:outline-none focus:border-green-400"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label class="block text-green-400 text-xs mb-1">[description] *</label>
+                                <textarea 
+                                    value="${newCoin.description}"
+                                    onchange="newCoin.description = this.value"
+                                    placeholder="Tell the world about your coin..."
+                                    class="w-full bg-black border border-gray-700 px-2 py-1 rounded text-white text-xs focus:outline-none focus:border-green-400 h-16 resize-none"
+                                ></textarea>
+                            </div>
+
+                            <!-- Social Links -->
+                            <div class="space-y-2">
+                                <label class="block text-green-400 text-xs">[social links] (optional)</label>
+                                <input 
+                                    type="url" 
+                                    value="${newCoin.website}"
+                                    onchange="newCoin.website = this.value"
+                                    placeholder="🌐 website url"
+                                    class="w-full bg-black border border-gray-700 px-2 py-1 rounded text-white text-xs focus:outline-none focus:border-green-400"
+                                />
+                                <input 
+                                    type="url" 
+                                    value="${newCoin.twitter}"
+                                    onchange="newCoin.twitter = this.value"
+                                    placeholder="🐦 twitter/x url"
+                                    class="w-full bg-black border border-gray-700 px-2 py-1 rounded text-white text-xs focus:outline-none focus:border-green-400"
+                                />
+                                <input 
+                                    type="url" 
+                                    value="${newCoin.telegram}"
+                                    onchange="newCoin.telegram = this.value"
+                                    placeholder="📱 telegram url"
+                                    class="w-full bg-black border border-gray-700 px-2 py-1 rounded text-white text-xs focus:outline-none focus:border-green-400"
+                                />
+                            </div>
+                            
+                            <div class="pt-2">
+                                <button onclick="createCoin()" class="w-full bg-green-500 hover:bg-green-600 text-black font-bold py-2 rounded text-xs transition-colors">
+                                    [create coin]
+                                </button>
+                                <div class="text-gray-500 text-xs mt-2 space-y-1">
+                                    <p>💰 cost: 0.02 SOL (~$2)</p>
+                                    <p>⚡ instant deployment</p>
+                                    <p>📈 automatic bonding curve</p>
+                                    <p>🔄 immediate trading</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTerminal() {
+            return `
+                <div class="h-full bg-black text-green-400 font-mono text-xs">
+                    <div class="mb-4">
+                        <h2 class="text-green-400 mb-1">[pump.fun terminal]</h2>
+                        <p class="text-gray-400">real-time blockchain data stream</p>
+                    </div>
+                    
+                    <div class="bg-gray-900 border border-gray-800 rounded p-3 h-96 overflow-auto">
+                        <div class="space-y-1">
+                            <div class="text-yellow-400">[${new Date().toLocaleTimeString()}] SYSTEM: pump.fun terminal initialized</div>
+                            <div class="text-blue-400">[${new Date().toLocaleTimeString()}] NETWORK: connected to solana mainnet</div>
+                            <div class="text-green-400">[${new Date().toLocaleTimeString()}] NEW COIN: PEPE2024 deployed by 4aB9...xM1c</div>
+                            <div class="text-red-400">[${new Date().toLocaleTimeString()}] TRADE: 0.5 SOL -> 12.3M $PEPE2024</div>
+                            <div class="text-yellow-400">[${new Date().toLocaleTimeString()}] BUMP: WAGMI bonding curve 95% complete</div>
+                            <div class="text-green-400">[${new Date().toLocaleTimeString()}] NEW COIN: SOLCHAD deployed by 7xY3...bN5w</div>
+                            <div class="text-blue-400">[${new Date().toLocaleTimeString()}] VOLUME: $2.1M traded in last hour</div>
+                            <div class="text-red-400">[${new Date().toLocaleTimeString()}] DUMP: -89.7% $REKT price action</div>
+                            <div class="text-green-400">[${new Date().toLocaleTimeString()}] MOON: WAGMI graduated to Raydium 🚀</div>
+                            <div class="text-yellow-400">[${new Date().toLocaleTimeString()}] STATUS: ${mockTokens.filter(t => t.isLive).length} active coins</div>
+                            <div class="animate-pulse">></div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 flex items-center space-x-2">
+                        <span class="text-gray-400">pump.fun$</span>
+                        <input 
+                            type="text" 
+                            placeholder="enter command..."
+                            class="flex-1 bg-transparent border-none outline-none text-green-400"
+                        />
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Functions
+        function setTab(tab) {
+            activeTab = tab;
+            render();
+        }
+        
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                render();
+            }
+        }
+        
+        function nextPage() {
+            currentPage++;
+            render();
+        }
+        
+        function createCoin() {
+            if (newCoin.name && newCoin.ticker && newCoin.description) {
+                // Simulate coin creation
+                const newToken = {
+                    id: mockTokens.length + 1,
+                    name: newCoin.name,
+                    ticker: newCoin.ticker.startsWith('$') ? newCoin.ticker : '$' + newCoin.ticker,
+                    description: newCoin.description,
+                    marketCap: "0.1K",
+                    price: "0.000001",
+                    change24h: "0.0",
+                    volume24h: "0",
+                    progress: 1,
+                    replies: 0,
+                    emoji: "🚀",
+                    creator: "You",
+                    createdTime: "now",
+                    lastBump: "now",
+                    holders: 1,
+                    isLive: true,
+                    bondingCurve: 100,
+                    isNsfw: false,
+                    tags: ["new", "fresh"]
+                };
+                
+                mockTokens.unshift(newToken);
+                alert(`🎉 Coin "${newCoin.name}" created successfully!\n\nContract: ${Math.random().toString(36).substring(2, 15)}...${Math.random().toString(36).substring(2, 6)}\nInitial Supply: 1,000,000,000 tokens\nBonding Curve: Active\n\nYour coin is now live and trading!`);
+                
+                newCoin = { name: '', ticker: '', description: '', website: '', twitter: '', telegram: '' };
+                setTab('board');
+            } else {
+                alert('❌ Please fill in all required fields (name, ticker, description)');
+            }
+        }
+        
+        // Initial render
+        render();
+
+        // Token Window Functions
+        function openTokenWindow(tokenId) {
+            selectedToken = mockTokens.find(t => t.id === tokenId);
+            showTokenWindow = true;
+            generateChartData();
+            startChart();
+            renderTokenWindow();
+        }
+
+        function closeTokenWindow() {
+            showTokenWindow = false;
+            selectedToken = null;
+            if (chartInterval) clearInterval(chartInterval);
+            document.getElementById('tokenWindow')?.remove();
+        }
+
+        function generateChartData() {
+            chartData = [];
+            let basePrice = parseFloat(selectedToken.price) * 1000000; // Convert to better scale
+            let time = Date.now() - (100 * 60 * 1000); // Start 100 minutes ago
+            
+            for (let i = 0; i < 100; i++) {
+                const volatility = selectedToken.isLive ? 0.1 : 0.05;
+                const change = (Math.random() - 0.5) * volatility;
+                basePrice = Math.max(basePrice * (1 + change), 0.001);
+                
+                chartData.push({
+                    time: time + (i * 60 * 1000),
+                    open: basePrice,
+                    high: basePrice * (1 + Math.random() * 0.05),
+                    low: basePrice * (1 - Math.random() * 0.05),
+                    close: basePrice,
+                    volume: Math.random() * 1000000
+                });
+            }
+        }
+
+        function startChart() {
+            if (chartInterval) clearInterval(chartInterval);
+            
+            chartInterval = setInterval(() => {
+                if (!showTokenWindow) return;
+                
+                const lastCandle = chartData[chartData.length - 1];
+                const volatility = selectedToken.isLive ? 0.15 : 0.08;
+                const change = (Math.random() - 0.5) * volatility;
+                const newPrice = Math.max(lastCandle.close * (1 + change), 0.001);
+                
+                const newCandle = {
+                    time: Date.now(),
+                    open: lastCandle.close,
+                    high: Math.max(lastCandle.close, newPrice) * (1 + Math.random() * 0.03),
+                    low: Math.min(lastCandle.close, newPrice) * (1 - Math.random() * 0.03),
+                    close: newPrice,
+                    volume: Math.random() * 2000000
+                };
+                
+                chartData.push(newCandle);
+                if (chartData.length > 100) chartData.shift();
+                
+                // Update token price
+                selectedToken.price = (newPrice / 1000000).toFixed(6);
+                const priceChange = ((newPrice - lastCandle.close) / lastCandle.close * 100);
+                selectedToken.change24h = priceChange.toFixed(1);
+                
+                renderChart();
+            }, selectedToken.isLive ? 500 : 2000); // Faster updates for live tokens
+        }
+
+        function renderTokenWindow() {
+            if (!selectedToken || !showTokenWindow) return;
+            
+            const existingWindow = document.getElementById('tokenWindow');
+            if (existingWindow) existingWindow.remove();
+            
+            const tokenWindow = document.createElement('div');
+            tokenWindow.id = 'tokenWindow';
+            tokenWindow.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            tokenWindow.innerHTML = `
+                <div class="bg-black border-2 border-gray-700 rounded-lg w-[90vw] h-[80vh] max-w-4xl overflow-hidden">
+                    <!-- Token Window Header -->
+                    <div class="bg-gray-900 border-b border-gray-700 p-3 flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded border border-gray-600 flex items-center justify-center">
+                                ${selectedToken.emoji}
+                            </div>
+                            <div>
+                                <h2 class="text-green-400 font-bold text-sm">${selectedToken.name} ${selectedToken.ticker}</h2>
+                                <p class="text-gray-400 text-xs">CA: ${Math.random().toString(36).substring(2, 15)}...${Math.random().toString(36).substring(2, 6)}</p>
+                            </div>
+                            ${selectedToken.isLive ? '<div class="w-2 h-2 bg-green-400 rounded-full pulse"></div>' : ''}
+                        </div>
+                        <button onclick="closeTokenWindow()" class="text-gray-400 hover:text-white text-xl">×</button>
+                    </div>
+                    
+                    <div class="flex h-full">
+                        <!-- Chart Section -->
+                        <div class="flex-1 p-4">
+                            <div class="mb-4 flex items-center justify-between">
+                                <div class="flex items-center space-x-4">
+                                    <div class="text-2xl font-bold text-white">${selectedToken.price}</div>
+                                    <div class="${parseFloat(selectedToken.change24h) >= 0 ? 'text-green-400' : 'text-red-400'} text-lg font-bold">
+                                        ${parseFloat(selectedToken.change24h) >= 0 ? '+' : ''}${selectedToken.change24h}%
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2 text-xs">
+                                    <button class="px-2 py-1 bg-gray-800 text-green-400 rounded">1M</button>
+                                    <button class="px-2 py-1 bg-gray-700 text-gray-400 rounded">5M</button>
+                                    <button class="px-2 py-1 bg-gray-700 text-gray-400 rounded">1H</button>
+                                    <button class="px-2 py-1 bg-gray-700 text-gray-400 rounded">1D</button>
+                                </div>
+                            </div>
+                            
+                            <!-- Chart Canvas -->
+                            <div class="bg-gray-900 border border-gray-800 rounded h-96 p-2">
+                                <canvas id="priceChart" class="w-full h-full"></canvas>
+                            </div>
+                            
+                            <!-- Stats Row -->
+                            <div class="grid grid-cols-4 gap-4 mt-4 text-xs">
+                                <div class="bg-gray-900 border border-gray-800 rounded p-2">
+                                    <div class="text-gray-400">Market Cap</div>
+                                    <div class="text-white font-bold">${selectedToken.marketCap}</div>
+                                </div>
+                                <div class="bg-gray-900 border border-gray-800 rounded p-2">
+                                    <div class="text-gray-400">Volume 24h</div>
+                                    <div class="text-white font-bold">${selectedToken.volume24h}</div>
+                                </div>
+                                <div class="bg-gray-900 border border-gray-800 rounded p-2">
+                                    <div class="text-gray-400">Holders</div>
+                                    <div class="text-white font-bold">${selectedToken.holders}</div>
+                                </div>
+                                <div class="bg-gray-900 border border-gray-800 rounded p-2">
+                                    <div class="text-gray-400">Bonding Progress</div>
+                                    <div class="text-white font-bold">${selectedToken.progress}%</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Trading Section -->
+                        <div class="w-80 border-l border-gray-700 p-4">
+                            <div class="mb-4">
+                                <h3 class="text-green-400 font-bold mb-2">[TRADE]</h3>
+                                <div class="flex space-x-2 mb-3">
+                                    <button class="flex-1 bg-green-500 text-black font-bold py-2 rounded text-xs">BUY</button>
+                                    <button class="flex-1 bg-red-500 text-black font-bold py-2 rounded text-xs">SELL</button>
+                                </div>
+                                <div class="space-y-2">
+                                    <input type="number" placeholder="SOL amount" class="w-full bg-gray-900 border border-gray-700 px-2 py-1 rounded text-white text-xs">
+                                    <div class="text-gray-400 text-xs">≈ 0 ${selectedToken.ticker}</div>
+                                    <button class="w-full bg-gray-800 border border-gray-700 text-green-400 py-2 rounded text-xs font-bold">
+                                        Connect Wallet
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Live Trades -->
+                            <div class="mb-4">
+                                <h3 class="text-green-400 font-bold mb-2 text-xs">[LIVE TRADES]</h3>
+                                <div class="bg-gray-900 border border-gray-800 rounded p-2 h-32 overflow-auto text-xs space-y-1">
+                                    <div class="flex justify-between">
+                                        <span class="text-green-400">BUY 2.1 SOL</span>
+                                        <span class="text-gray-400">12s</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-red-400">SELL 0.8 SOL</span>
+                                        <span class="text-gray-400">34s</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-green-400">BUY 5.4 SOL</span>
+                                        <span class="text-gray-400">1m</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-green-400">BUY 0.3 SOL</span>
+                                        <span class="text-gray-400">2m</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Comments -->
+                            <div>
+                                <h3 class="text-green-400 font-bold mb-2 text-xs">[COMMENTS] (${selectedToken.replies})</h3>
+                                <div class="bg-gray-900 border border-gray-800 rounded p-2 h-40 overflow-auto text-xs space-y-2">
+                                    <div class="border-b border-gray-800 pb-1">
+                                        <div class="text-yellow-400">anon_${Math.floor(Math.random() * 9999)}</div>
+                                        <div class="text-gray-300">LFG!!! 🚀🚀🚀 TO THE MOON</div>
+                                        <div class="text-gray-500">2m ago</div>
+                                    </div>
+                                    <div class="border-b border-gray-800 pb-1">
+                                        <div class="text-yellow-400">hodler_${Math.floor(Math.random() * 9999)}</div>
+                                        <div class="text-gray-300">diamond hands only 💎🙌</div>
+                                        <div class="text-gray-500">5m ago</div>
+                                    </div>
+                                    <div class="border-b border-gray-800 pb-1">
+                                        <div class="text-yellow-400">degen_${Math.floor(Math.random() * 9999)}</div>
+                                        <div class="text-gray-300">just aped in with 10 SOL 🦍</div>
+                                        <div class="text-gray-500">8m ago</div>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <input type="text" placeholder="add comment..." class="w-full bg-black border border-gray-700 px-2 py-1 rounded text-white text-xs">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(tokenWindow);
+            setTimeout(renderChart, 100); // Delay to ensure canvas is rendered
+        }
+
+        function renderChart() {
+            const canvas = document.getElementById('priceChart');
+            if (!canvas || !chartData.length) return;
+            
+            const ctx = canvas.getContext('2d');
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * 2; // High DPI
+            canvas.height = rect.height * 2;
+            ctx.scale(2, 2);
+            
+            const width = rect.width;
+            const height = rect.height;
+            
+            // Clear canvas
+            ctx.fillStyle = '#111827';
+            ctx.fillRect(0, 0, width, height);
+            
+            if (chartData.length < 2) return;
+            
+            // Calculate price range
+            const prices = chartData.flatMap(d => [d.high, d.low]);
+            const minPrice = Math.min(...prices);
+            const maxPrice = Math.max(...prices);
+            const priceRange = maxPrice - minPrice;
+            
+            const candleWidth = width / chartData.length;
+            
+            // Draw candles
+            chartData.forEach((candle, i) => {
+                const x = i * candleWidth + candleWidth / 2;
+                const openY = height - ((candle.open - minPrice) / priceRange) * height;
+                const closeY = height - ((candle.close - minPrice) / priceRange) * height;
+                const highY = height - ((candle.high - minPrice) / priceRange) * height;
+                const lowY = height - ((candle.low - minPrice) / priceRange) * height;
+                
+                const isGreen = candle.close >= candle.open;
+                ctx.strokeStyle = isGreen ? '#10b981' : '#ef4444';
+                ctx.fillStyle = isGreen ? '#10b981' : '#ef4444';
+                
+                // Draw wick
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(x, highY);
+                ctx.lineTo(x, lowY);
+                ctx.stroke();
+                
+                // Draw body
+                const bodyHeight = Math.abs(closeY - openY);
+                const bodyY = Math.min(openY, closeY);
+                const bodyWidth = candleWidth * 0.6;
+                
+                if (isGreen) {
+                    ctx.fillRect(x - bodyWidth/2, bodyY, bodyWidth, bodyHeight);
+                } else {
+                    ctx.strokeRect(x - bodyWidth/2, bodyY, bodyWidth, bodyHeight);
+                }
+            });
+            
+            // Draw price line
+            ctx.strokeStyle = '#10b981';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 2]);
+            const currentPriceY = height - ((parseFloat(selectedToken.price) * 1000000 - minPrice) / priceRange) * height;
+            ctx.beginPath();
+            ctx.moveTo(0, currentPriceY);
+            ctx.lineTo(width, currentPriceY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+    </script>
+</body>
+</html>
